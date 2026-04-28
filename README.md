@@ -1,1 +1,1 @@
-# CSE-306
+# I am learing Go
