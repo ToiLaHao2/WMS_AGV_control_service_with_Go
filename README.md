@@ -1,1 +1,1 @@
-# I am learing Go
+# I am learning Go
