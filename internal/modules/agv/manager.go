@@ -2,6 +2,7 @@ package agv
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,6 +10,8 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/segmentio/kafka-go"
 )
 
 // Tọa độ 1 điểm trên bản đồ
@@ -38,8 +41,9 @@ func (p *ExecutionPlan) FromJSON(r io.Reader) error {
 
 // Manager quản lý trạng thái các AGV
 type Manager struct {
-	mu   sync.Mutex
-	agvs map[string]*AGVState
+	mu          sync.Mutex
+	agvs        map[string]*AGVState
+	kafkaWriter *kafka.Writer
 }
 
 type AGVState struct {
@@ -49,8 +53,16 @@ type AGVState struct {
 }
 
 func NewManager() *Manager {
+	// Khởi tạo Kafka Writer
+	w := &kafka.Writer{
+		Addr:     kafka.TCP("localhost:9092"), // TODO: Lấy từ biến môi trường
+		Topic:    "agv-telemetry",
+		Balancer: &kafka.LeastBytes{},
+	}
+
 	return &Manager{
-		agvs: make(map[string]*AGVState),
+		agvs:        make(map[string]*AGVState),
+		kafkaWriter: w,
 	}
 }
 
@@ -84,9 +96,8 @@ func (m *Manager) RunAGV(plan ExecutionPlan) {
 			log.Printf("[AGV %s] Buoc %d/%d | TAI: (%d,%d) | [DI CHUYEN]", plan.AgvID, i+1, len(plan.Waypoints), wp.Position.X, wp.Position.Y)
 		}
 
-		if plan.WmsCallbackURL != "" {
-			go m.reportToWMS(plan.WmsCallbackURL, plan.AgvID, wp, plan.InboundOrderID)
-		}
+		// Bắn tọa độ lên Kafka
+		go m.publishTelemetry(plan.AgvID, wp, plan.InboundOrderID)
 	}
 
 	m.mu.Lock()
@@ -100,7 +111,7 @@ func (m *Manager) RunAGV(plan ExecutionPlan) {
 	}
 }
 
-func (m *Manager) reportToWMS(url, agvID string, wp Waypoint, orderID string) {
+func (m *Manager) publishTelemetry(agvID string, wp Waypoint, orderID string) {
 	payload := map[string]interface{}{
 		"agv_id":           agvID,
 		"inbound_order_id": orderID,
@@ -109,12 +120,16 @@ func (m *Manager) reportToWMS(url, agvID string, wp Waypoint, orderID string) {
 		"action":           wp.Action,
 	}
 	body, _ := json.Marshal(payload)
-	resp, err := http.Post(url+"/api/agv/update", "application/json", bytes.NewBuffer(body))
+
+	err := m.kafkaWriter.WriteMessages(context.Background(),
+		kafka.Message{
+			Key:   []byte(agvID), // Dùng AGV ID làm partition key để đảm bảo thứ tự
+			Value: body,
+		},
+	)
 	if err != nil {
-		log.Printf("[AGV %s] Loi bao cao WMS: %v", agvID, err)
-		return
+		log.Printf("[AGV %s] Loi Publish Kafka: %v", agvID, err)
 	}
-	defer resp.Body.Close()
 }
 
 func (m *Manager) reportCompletionToWMS(url, agvID, orderID string) {
@@ -124,7 +139,7 @@ func (m *Manager) reportCompletionToWMS(url, agvID, orderID string) {
 		"status":           "COMPLETED",
 	}
 	body, _ := json.Marshal(payload)
-	resp, err := http.Post(url+"/api/agv/complete", "application/json", bytes.NewBuffer(body))
+	resp, err := http.Post(url+"/api/inbound/agv-complete", "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		log.Printf("[AGV %s] Loi bao cao hoan thanh WMS: %v", agvID, err)
 		return
