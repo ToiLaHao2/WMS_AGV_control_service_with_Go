@@ -42,3 +42,22 @@ Dự án áp dụng Standard Go Project Layout:
 - `cmd/`: Chứa các entrypoint (hàm main) để chạy ứng dụng.
 - `internal/`: Chứa các logic thực thi vật lý, quản lý bộ nhớ của đội xe AGV, hoàn toàn tách biệt.
 - `transport/`: Nơi tiếp nhận và xử lý các giao thức mạng (gRPC, Kafka).
+
+## 🏃 Hướng dẫn chạy môi trường phát triển (Local Development)
+
+Tầng AGV Control (Golang) hiện tại là một HTTP Server lắng nghe tại cổng `8081` và đẩy telemetry lên Kafka ở `localhost:9092`. 
+
+Để chạy hệ thống trên máy cá nhân, bạn mở Terminal tại thư mục gốc của dịch vụ này (`Warehouse_management_simulation_AGV_control_service_with_Go`) và làm theo các bước sau:
+
+**1. Tải các thư viện phụ thuộc (ví dụ: kafka-go)**
+```bash
+go mod tidy
+```
+
+**2. Khởi động Server AGV**
+```bash
+go run cmd/main.go
+```
+
+Nếu chạy thành công, Terminal sẽ hiển thị dòng log xác nhận:
+> `[AGV Control] HTTP Server dang lang nghe tai :8081`
