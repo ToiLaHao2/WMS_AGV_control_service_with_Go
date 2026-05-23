@@ -1,0 +1,3 @@
+[submodule "WMS_Contracts"]
+	path = WMS_Contracts
+	url = https://github.com/ToiLaHao2/WMS_Contracts.git
