@@ -92,6 +92,8 @@ func (m *Manager) RunAGV(plan ExecutionPlan) {
 		case "DROP_OFF":
 			log.Printf("[AGV %s] Buoc %d/%d | TAI: (%d,%d) | [CAT HANG]", plan.AgvID, i+1, len(plan.Waypoints), wp.Position.X, wp.Position.Y)
 			time.Sleep(2 * time.Second)
+		case "RETURN":
+			log.Printf("[AGV %s] Buoc %d/%d | TAI: (%d,%d) | [QUAY VE DOCK]", plan.AgvID, i+1, len(plan.Waypoints), wp.Position.X, wp.Position.Y)
 		default:
 			log.Printf("[AGV %s] Buoc %d/%d | TAI: (%d,%d) | [DI CHUYEN]", plan.AgvID, i+1, len(plan.Waypoints), wp.Position.X, wp.Position.Y)
 		}
