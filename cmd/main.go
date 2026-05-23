@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/devil/wmss/agv/internal/core/grpcserver"
 	"github.com/devil/wmss/agv/internal/modules/agv"
 )
 
@@ -15,7 +16,10 @@ var (
 
 
 func main() {
-	// === HTTP Server để WMS gửi lệnh Execution Plan ===
+	// === Khởi động gRPC Server (Non-blocking) ===
+	go grpcserver.StartGRPCServer(":50052", agvManager)
+
+	// === HTTP Server để phục vụ Healthcheck hoặc REST fallback ===
 	mux := http.NewServeMux()
 
 	// WMS gọi endpoint này để giao nhiệm vụ chạy cho AGV
