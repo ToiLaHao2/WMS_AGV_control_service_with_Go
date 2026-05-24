@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 
@@ -53,11 +54,17 @@ type AGVState struct {
 }
 
 func NewManager() *Manager {
+	broker := os.Getenv("KAFKA_BROKER")
+	if broker == "" {
+		broker = "localhost:9092"
+	}
+
 	// Khởi tạo Kafka Writer
 	w := &kafka.Writer{
-		Addr:     kafka.TCP("localhost:9092"), // TODO: Lấy từ biến môi trường
-		Topic:    "agv-telemetry",
-		Balancer: &kafka.LeastBytes{},
+		Addr:                   kafka.TCP(broker),
+		Topic:                  "agv-telemetry",
+		Balancer:               &kafka.LeastBytes{},
+		AllowAutoTopicCreation: true,
 	}
 
 	return &Manager{
