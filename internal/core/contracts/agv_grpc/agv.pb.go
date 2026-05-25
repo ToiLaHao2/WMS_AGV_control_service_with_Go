@@ -129,7 +129,7 @@ type ExecutePlanRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	AgvId          string                 `protobuf:"bytes,1,opt,name=agv_id,json=agvId,proto3" json:"agv_id,omitempty"`
 	InboundOrderId string                 `protobuf:"bytes,2,opt,name=inbound_order_id,json=inboundOrderId,proto3" json:"inbound_order_id,omitempty"`
-	WmsCallbackUrl string                 `protobuf:"bytes,3,opt,name=wms_callback_url,json=wmsCallbackUrl,proto3" json:"wms_callback_url,omitempty"`
+	WmsGrpcUrl     string                 `protobuf:"bytes,3,opt,name=wms_grpc_url,json=wmsGrpcUrl,proto3" json:"wms_grpc_url,omitempty"`
 	Waypoints      []*Waypoint            `protobuf:"bytes,4,rep,name=waypoints,proto3" json:"waypoints,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
@@ -179,9 +179,9 @@ func (x *ExecutePlanRequest) GetInboundOrderId() string {
 	return ""
 }
 
-func (x *ExecutePlanRequest) GetWmsCallbackUrl() string {
+func (x *ExecutePlanRequest) GetWmsGrpcUrl() string {
 	if x != nil {
-		return x.WmsCallbackUrl
+		return x.WmsGrpcUrl
 	}
 	return ""
 }
@@ -264,11 +264,12 @@ const file_agv_proto_rawDesc = "" +
 	"\x01y\x18\x02 \x01(\x02R\x01y\"O\n" +
 	"\bWaypoint\x12+\n" +
 	"\bposition\x18\x01 \x01(\v2\x0f.agv.CoordinateR\bposition\x12\x16\n" +
-	"\x06action\x18\x02 \x01(\tR\x06action\"\xac\x01\n" +
+	"\x06action\x18\x02 \x01(\tR\x06action\"\xa4\x01\n" +
 	"\x12ExecutePlanRequest\x12\x15\n" +
 	"\x06agv_id\x18\x01 \x01(\tR\x05agvId\x12(\n" +
-	"\x10inbound_order_id\x18\x02 \x01(\tR\x0einboundOrderId\x12(\n" +
-	"\x10wms_callback_url\x18\x03 \x01(\tR\x0ewmsCallbackUrl\x12+\n" +
+	"\x10inbound_order_id\x18\x02 \x01(\tR\x0einboundOrderId\x12 \n" +
+	"\fwms_grpc_url\x18\x03 \x01(\tR\n" +
+	"wmsGrpcUrl\x12+\n" +
 	"\twaypoints\x18\x04 \x03(\v2\r.agv.WaypointR\twaypoints\"Z\n" +
 	"\x13ExecutePlanResponse\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\x12\x15\n" +

@@ -5,7 +5,8 @@ docker run --rm -v "%cd%:/workspace" -w /workspace rvolosatovs/protoc ^
   -I=./WMS_Contracts ^
   --go_out=. --go_opt=module=github.com/devil/wmss/agv ^
   --go-grpc_out=. --go-grpc_opt=module=github.com/devil/wmss/agv ^
-  ./WMS_Contracts/agv.proto
+  ./WMS_Contracts/agv.proto ^
+  ./WMS_Contracts/wms.proto
 
 if %ERRORLEVEL% equ 0 (
     echo [AGV Control] Build gRPC thanh cong!
