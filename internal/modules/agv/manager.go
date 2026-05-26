@@ -1,18 +1,19 @@
 package agv
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
-	"net/http"
 	"os"
 	"sync"
 	"time"
 
+	pbWms "github.com/devil/wmss/agv/internal/core/contracts/wms_grpc"
 	"github.com/segmentio/kafka-go"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 // Tọa độ 1 điểm trên bản đồ
@@ -31,7 +32,7 @@ type Waypoint struct {
 type ExecutionPlan struct {
 	AgvID          string     `json:"agv_id"`
 	InboundOrderID string     `json:"inbound_order_id"`
-	WmsCallbackURL string     `json:"wms_callback_url"`
+	WmsGrpcURL     string     `json:"wms_grpc_url"`
 	Waypoints      []Waypoint `json:"waypoints"`
 }
 
@@ -115,8 +116,8 @@ func (m *Manager) RunAGV(plan ExecutionPlan) {
 
 	log.Printf("[AGV %s] ===== HOAN THANH NHIEM VU =====", plan.AgvID)
 
-	if plan.WmsCallbackURL != "" {
-		go m.reportCompletionToWMS(plan.WmsCallbackURL, plan.AgvID, plan.InboundOrderID)
+	if plan.WmsGrpcURL != "" {
+		go m.reportCompletionToWMS(plan.WmsGrpcURL, plan.AgvID, plan.InboundOrderID)
 	}
 }
 
@@ -141,18 +142,34 @@ func (m *Manager) publishTelemetry(agvID string, wp Waypoint, orderID string) {
 	}
 }
 
-func (m *Manager) reportCompletionToWMS(url, agvID, orderID string) {
-	payload := map[string]interface{}{
-		"agv_id":           agvID,
-		"inbound_order_id": orderID,
-		"status":           "COMPLETED",
-	}
-	body, _ := json.Marshal(payload)
-	resp, err := http.Post(url+"/api/inbound/agv-complete", "application/json", bytes.NewBuffer(body))
+func (m *Manager) reportCompletionToWMS(grpcURL, agvID, orderID string) {
+	conn, err := grpc.NewClient(grpcURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Printf("[AGV %s] Loi bao cao hoan thanh WMS: %v", agvID, err)
+		log.Printf("[AGV %s] Khong the ket noi toi WMS gRPC server: %v", agvID, err)
 		return
 	}
-	defer resp.Body.Close()
-	fmt.Printf("[AGV %s] Da bao cao hoan thanh cho WMS.\n", agvID)
+	defer conn.Close()
+
+	client := pbWms.NewWMSServiceClient(conn)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	resp, err := client.ReportAGVTaskCompleted(ctx, &pbWms.ReportAGVTaskRequest{
+		AgvId:          agvID,
+		InboundOrderId: orderID,
+		Status:         "COMPLETED",
+	})
+
+	if err != nil {
+		log.Printf("[AGV %s] Loi bao cao hoan thanh qua gRPC: %v", agvID, err)
+		return
+	}
+
+	if !resp.Success {
+		log.Printf("[AGV %s] WMS tra ve that bai: %s", agvID, resp.Message)
+		return
+	}
+
+	fmt.Printf("[AGV %s] Da bao cao hoan thanh cho WMS qua gRPC thanh cong.\n", agvID)
 }

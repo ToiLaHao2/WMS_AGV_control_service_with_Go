@@ -39,7 +39,7 @@ func (s *AGVServer) ExecutePlan(ctx context.Context, req *pb.ExecutePlanRequest)
 	plan := agv.ExecutionPlan{
 		AgvID:          req.AgvId,
 		InboundOrderID: req.InboundOrderId,
-		WmsCallbackURL: req.WmsCallbackUrl,
+		WmsGrpcURL:     req.WmsGrpcUrl,
 		Waypoints:      waypoints,
 	}
 
