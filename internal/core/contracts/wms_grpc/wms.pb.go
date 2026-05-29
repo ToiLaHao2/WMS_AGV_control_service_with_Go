@@ -243,6 +243,7 @@ type ReplanRequest struct {
 	WarehouseId     string                 `protobuf:"bytes,2,opt,name=warehouse_id,json=warehouseId,proto3" json:"warehouse_id,omitempty"`
 	CurrentPosition *Coordinate            `protobuf:"bytes,3,opt,name=current_position,json=currentPosition,proto3" json:"current_position,omitempty"`
 	Milestones      []*Milestone           `protobuf:"bytes,4,rep,name=milestones,proto3" json:"milestones,omitempty"`
+	Obstacles       []*Coordinate          `protobuf:"bytes,5,rep,name=obstacles,proto3" json:"obstacles,omitempty"` // Tọa độ vật lý của các AGV đang bị kẹt/đứng im
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -301,6 +302,13 @@ func (x *ReplanRequest) GetCurrentPosition() *Coordinate {
 func (x *ReplanRequest) GetMilestones() []*Milestone {
 	if x != nil {
 		return x.Milestones
+	}
+	return nil
+}
+
+func (x *ReplanRequest) GetObstacles() []*Coordinate {
+	if x != nil {
+		return x.Obstacles
 	}
 	return nil
 }
@@ -435,14 +443,15 @@ const file_wms_proto_rawDesc = "" +
 	"\x01y\x18\x02 \x01(\x02R\x01y\"P\n" +
 	"\tMilestone\x12+\n" +
 	"\bposition\x18\x01 \x01(\v2\x0f.wms.CoordinateR\bposition\x12\x16\n" +
-	"\x06action\x18\x02 \x01(\tR\x06action\"\xb5\x01\n" +
+	"\x06action\x18\x02 \x01(\tR\x06action\"\xe4\x01\n" +
 	"\rReplanRequest\x12\x15\n" +
 	"\x06agv_id\x18\x01 \x01(\tR\x05agvId\x12!\n" +
 	"\fwarehouse_id\x18\x02 \x01(\tR\vwarehouseId\x12:\n" +
 	"\x10current_position\x18\x03 \x01(\v2\x0f.wms.CoordinateR\x0fcurrentPosition\x12.\n" +
 	"\n" +
 	"milestones\x18\x04 \x03(\v2\x0e.wms.MilestoneR\n" +
-	"milestones\"O\n" +
+	"milestones\x12-\n" +
+	"\tobstacles\x18\x05 \x03(\v2\x0f.wms.CoordinateR\tobstacles\"O\n" +
 	"\bWaypoint\x12+\n" +
 	"\bposition\x18\x01 \x01(\v2\x0f.wms.CoordinateR\bposition\x12\x16\n" +
 	"\x06action\x18\x02 \x01(\tR\x06action\"q\n" +
@@ -481,17 +490,18 @@ var file_wms_proto_depIdxs = []int32{
 	2, // 0: wms.Milestone.position:type_name -> wms.Coordinate
 	2, // 1: wms.ReplanRequest.current_position:type_name -> wms.Coordinate
 	3, // 2: wms.ReplanRequest.milestones:type_name -> wms.Milestone
-	2, // 3: wms.Waypoint.position:type_name -> wms.Coordinate
-	5, // 4: wms.ReplanResponse.waypoints:type_name -> wms.Waypoint
-	0, // 5: wms.WMSService.ReportAGVTaskCompleted:input_type -> wms.ReportAGVTaskRequest
-	4, // 6: wms.WMSService.RequestReplan:input_type -> wms.ReplanRequest
-	1, // 7: wms.WMSService.ReportAGVTaskCompleted:output_type -> wms.ReportAGVTaskResponse
-	6, // 8: wms.WMSService.RequestReplan:output_type -> wms.ReplanResponse
-	7, // [7:9] is the sub-list for method output_type
-	5, // [5:7] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	2, // 3: wms.ReplanRequest.obstacles:type_name -> wms.Coordinate
+	2, // 4: wms.Waypoint.position:type_name -> wms.Coordinate
+	5, // 5: wms.ReplanResponse.waypoints:type_name -> wms.Waypoint
+	0, // 6: wms.WMSService.ReportAGVTaskCompleted:input_type -> wms.ReportAGVTaskRequest
+	4, // 7: wms.WMSService.RequestReplan:input_type -> wms.ReplanRequest
+	1, // 8: wms.WMSService.ReportAGVTaskCompleted:output_type -> wms.ReportAGVTaskResponse
+	6, // 9: wms.WMSService.RequestReplan:output_type -> wms.ReplanResponse
+	8, // [8:10] is the sub-list for method output_type
+	6, // [6:8] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_wms_proto_init() }

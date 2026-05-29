@@ -188,11 +188,25 @@ func (m *Manager) RunAGV(plan ExecutionPlan) {
 					milestones = append(milestones, lastReturn)
 				}
 
+				// Gom tọa độ các AGV đang bị kẹt/đứng im (không phải MOVING) làm obstacles
 				m.mu.Lock()
 				curX, curY := m.agvs[plan.AgvID].X, m.agvs[plan.AgvID].Y
+				var obstacles []*pbWms.Coordinate
+				for id, state := range m.agvs {
+					if id == plan.AgvID {
+						continue
+					}
+					// Chỉ lấy xe KHÔNG đang di chuyển bình thường (IDLE, WAITING, bị kẹt)
+					if state.Status != "MOVING" && state.Status != "RETURN" {
+						obstacles = append(obstacles, &pbWms.Coordinate{
+							X: float32(state.X),
+							Y: float32(state.Y),
+						})
+					}
+				}
 				m.mu.Unlock()
 
-				newPlan, err := m.requestReplan(plan, curX, curY, milestones)
+				newPlan, err := m.requestReplan(plan, curX, curY, milestones, obstacles)
 				if err != nil || len(newPlan) == 0 {
 					log.Printf("[AGV %s] Lỗi Replan: %v. Đứng chờ...", plan.AgvID, err)
 					time.Sleep(2 * time.Second)
@@ -301,7 +315,7 @@ func (m *Manager) reportCompletionToWMS(grpcURL, agvID, orderID string) {
 	fmt.Printf("[AGV %s] Da bao cao hoan thanh cho WMS qua gRPC thanh cong.\n", agvID)
 }
 
-func (m *Manager) requestReplan(plan ExecutionPlan, curX, curY int, milestones []*pbWms.Milestone) ([]Waypoint, error) {
+func (m *Manager) requestReplan(plan ExecutionPlan, curX, curY int, milestones []*pbWms.Milestone, obstacles []*pbWms.Coordinate) ([]Waypoint, error) {
 	if plan.WmsGrpcURL == "" {
 		return nil, fmt.Errorf("khong co WmsGrpcURL")
 	}
@@ -324,6 +338,7 @@ func (m *Manager) requestReplan(plan ExecutionPlan, curX, curY int, milestones [
 			Y: float32(curY),
 		},
 		Milestones: milestones,
+		Obstacles:  obstacles,
 	}
 
 	resp, err := client.RequestReplan(ctx, req)
