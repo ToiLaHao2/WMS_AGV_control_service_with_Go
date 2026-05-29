@@ -54,6 +54,9 @@ type AGVState struct {
 	Status string // "IDLE", "MOVING", "PICKING", "DROPPING"
 }
 
+// Số lần tối đa chờ trước khi phát cảnh báo deadlock
+const maxCollisionRetries = 15
+
 func NewManager() *Manager {
 	broker := os.Getenv("KAFKA_BROKER")
 	if broker == "" {
@@ -74,6 +77,38 @@ func NewManager() *Manager {
 	}
 }
 
+// isPositionOccupied kiểm tra xem có AGV nào khác đang đứng tại vị trí (targetX, targetY) không.
+// Đây là lớp bảo vệ runtime, hoạt động độc lập với Reservation Table ở MES.
+func (m *Manager) isPositionOccupied(targetX, targetY int, excludeAGV string) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for id, state := range m.agvs {
+		if id == excludeAGV {
+			continue
+		}
+		if state.X == targetX && state.Y == targetY && state.Status != "IDLE" {
+			return true
+		}
+	}
+	return false
+}
+
+// waitForClearance chờ cho đến khi ô tiếp theo trống hoặc hết retry.
+// Trả về true nếu ô đã trống, false nếu hết retry (nghi ngờ deadlock).
+func (m *Manager) waitForClearance(agvID string, targetX, targetY int) bool {
+	for retry := 0; retry < maxCollisionRetries; retry++ {
+		if !m.isPositionOccupied(targetX, targetY, agvID) {
+			return true // Ô đã trống, tiếp tục di chuyển
+		}
+		log.Printf("[AGV %s] ⏳ WAITING — Ô (%d,%d) đang bị AGV khác chiếm. Chờ... (lần %d/%d)",
+			agvID, targetX, targetY, retry+1, maxCollisionRetries)
+		time.Sleep(1 * time.Second)
+	}
+	log.Printf("[AGV %s] ⚠️  DEADLOCK WARNING — Không thể vào ô (%d,%d) sau %d lần chờ!",
+		agvID, targetX, targetY, maxCollisionRetries)
+	return false
+}
+
 // RunAGV chạy lộ trình của 1 AGV trong goroutine riêng
 func (m *Manager) RunAGV(plan ExecutionPlan) {
 	m.mu.Lock()
@@ -84,6 +119,15 @@ func (m *Manager) RunAGV(plan ExecutionPlan) {
 	log.Printf("[AGV %s] Tong so buoc: %d", plan.AgvID, len(plan.Waypoints))
 
 	for i, wp := range plan.Waypoints {
+		// ═══ KIỂM TRA VA CHẠM TRƯỚC KHI DI CHUYỂN ═══
+		// Chỉ kiểm tra khi action là MOVE hoặc RETURN (các action di chuyển thuần túy)
+		if wp.Action == "MOVE" || wp.Action == "RETURN" {
+			if !m.waitForClearance(plan.AgvID, wp.Position.X, wp.Position.Y) {
+				// Nếu bị deadlock, vẫn cố gắng di chuyển (hy vọng MES đã tính toán đúng)
+				log.Printf("[AGV %s] Deadlock timeout, tiep tuc di chuyen...", plan.AgvID)
+			}
+		}
+
 		time.Sleep(1 * time.Second)
 
 		m.mu.Lock()
