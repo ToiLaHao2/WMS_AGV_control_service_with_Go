@@ -133,6 +133,290 @@ func (x *ReportAGVTaskResponse) GetMessage() string {
 	return ""
 }
 
+type Coordinate struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	X             float32                `protobuf:"fixed32,1,opt,name=x,proto3" json:"x,omitempty"`
+	Y             float32                `protobuf:"fixed32,2,opt,name=y,proto3" json:"y,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Coordinate) Reset() {
+	*x = Coordinate{}
+	mi := &file_wms_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Coordinate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Coordinate) ProtoMessage() {}
+
+func (x *Coordinate) ProtoReflect() protoreflect.Message {
+	mi := &file_wms_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Coordinate.ProtoReflect.Descriptor instead.
+func (*Coordinate) Descriptor() ([]byte, []int) {
+	return file_wms_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *Coordinate) GetX() float32 {
+	if x != nil {
+		return x.X
+	}
+	return 0
+}
+
+func (x *Coordinate) GetY() float32 {
+	if x != nil {
+		return x.Y
+	}
+	return 0
+}
+
+type Milestone struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Position      *Coordinate            `protobuf:"bytes,1,opt,name=position,proto3" json:"position,omitempty"`
+	Action        string                 `protobuf:"bytes,2,opt,name=action,proto3" json:"action,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Milestone) Reset() {
+	*x = Milestone{}
+	mi := &file_wms_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Milestone) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Milestone) ProtoMessage() {}
+
+func (x *Milestone) ProtoReflect() protoreflect.Message {
+	mi := &file_wms_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Milestone.ProtoReflect.Descriptor instead.
+func (*Milestone) Descriptor() ([]byte, []int) {
+	return file_wms_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *Milestone) GetPosition() *Coordinate {
+	if x != nil {
+		return x.Position
+	}
+	return nil
+}
+
+func (x *Milestone) GetAction() string {
+	if x != nil {
+		return x.Action
+	}
+	return ""
+}
+
+type ReplanRequest struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	AgvId           string                 `protobuf:"bytes,1,opt,name=agv_id,json=agvId,proto3" json:"agv_id,omitempty"`
+	WarehouseId     string                 `protobuf:"bytes,2,opt,name=warehouse_id,json=warehouseId,proto3" json:"warehouse_id,omitempty"`
+	CurrentPosition *Coordinate            `protobuf:"bytes,3,opt,name=current_position,json=currentPosition,proto3" json:"current_position,omitempty"`
+	Milestones      []*Milestone           `protobuf:"bytes,4,rep,name=milestones,proto3" json:"milestones,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ReplanRequest) Reset() {
+	*x = ReplanRequest{}
+	mi := &file_wms_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReplanRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReplanRequest) ProtoMessage() {}
+
+func (x *ReplanRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_wms_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReplanRequest.ProtoReflect.Descriptor instead.
+func (*ReplanRequest) Descriptor() ([]byte, []int) {
+	return file_wms_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ReplanRequest) GetAgvId() string {
+	if x != nil {
+		return x.AgvId
+	}
+	return ""
+}
+
+func (x *ReplanRequest) GetWarehouseId() string {
+	if x != nil {
+		return x.WarehouseId
+	}
+	return ""
+}
+
+func (x *ReplanRequest) GetCurrentPosition() *Coordinate {
+	if x != nil {
+		return x.CurrentPosition
+	}
+	return nil
+}
+
+func (x *ReplanRequest) GetMilestones() []*Milestone {
+	if x != nil {
+		return x.Milestones
+	}
+	return nil
+}
+
+type Waypoint struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Position      *Coordinate            `protobuf:"bytes,1,opt,name=position,proto3" json:"position,omitempty"`
+	Action        string                 `protobuf:"bytes,2,opt,name=action,proto3" json:"action,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Waypoint) Reset() {
+	*x = Waypoint{}
+	mi := &file_wms_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Waypoint) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Waypoint) ProtoMessage() {}
+
+func (x *Waypoint) ProtoReflect() protoreflect.Message {
+	mi := &file_wms_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Waypoint.ProtoReflect.Descriptor instead.
+func (*Waypoint) Descriptor() ([]byte, []int) {
+	return file_wms_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *Waypoint) GetPosition() *Coordinate {
+	if x != nil {
+		return x.Position
+	}
+	return nil
+}
+
+func (x *Waypoint) GetAction() string {
+	if x != nil {
+		return x.Action
+	}
+	return ""
+}
+
+type ReplanResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Waypoints     []*Waypoint            `protobuf:"bytes,3,rep,name=waypoints,proto3" json:"waypoints,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReplanResponse) Reset() {
+	*x = ReplanResponse{}
+	mi := &file_wms_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReplanResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReplanResponse) ProtoMessage() {}
+
+func (x *ReplanResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_wms_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReplanResponse.ProtoReflect.Descriptor instead.
+func (*ReplanResponse) Descriptor() ([]byte, []int) {
+	return file_wms_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ReplanResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *ReplanResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *ReplanResponse) GetWaypoints() []*Waypoint {
+	if x != nil {
+		return x.Waypoints
+	}
+	return nil
+}
+
 var File_wms_proto protoreflect.FileDescriptor
 
 const file_wms_proto_rawDesc = "" +
@@ -144,10 +428,32 @@ const file_wms_proto_rawDesc = "" +
 	"\x06status\x18\x03 \x01(\tR\x06status\"K\n" +
 	"\x15ReportAGVTaskResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage2]\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"(\n" +
+	"\n" +
+	"Coordinate\x12\f\n" +
+	"\x01x\x18\x01 \x01(\x02R\x01x\x12\f\n" +
+	"\x01y\x18\x02 \x01(\x02R\x01y\"P\n" +
+	"\tMilestone\x12+\n" +
+	"\bposition\x18\x01 \x01(\v2\x0f.wms.CoordinateR\bposition\x12\x16\n" +
+	"\x06action\x18\x02 \x01(\tR\x06action\"\xb5\x01\n" +
+	"\rReplanRequest\x12\x15\n" +
+	"\x06agv_id\x18\x01 \x01(\tR\x05agvId\x12!\n" +
+	"\fwarehouse_id\x18\x02 \x01(\tR\vwarehouseId\x12:\n" +
+	"\x10current_position\x18\x03 \x01(\v2\x0f.wms.CoordinateR\x0fcurrentPosition\x12.\n" +
+	"\n" +
+	"milestones\x18\x04 \x03(\v2\x0e.wms.MilestoneR\n" +
+	"milestones\"O\n" +
+	"\bWaypoint\x12+\n" +
+	"\bposition\x18\x01 \x01(\v2\x0f.wms.CoordinateR\bposition\x12\x16\n" +
+	"\x06action\x18\x02 \x01(\tR\x06action\"q\n" +
+	"\x0eReplanResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12+\n" +
+	"\twaypoints\x18\x03 \x03(\v2\r.wms.WaypointR\twaypoints2\x97\x01\n" +
 	"\n" +
 	"WMSService\x12O\n" +
-	"\x16ReportAGVTaskCompleted\x12\x19.wms.ReportAGVTaskRequest\x1a\x1a.wms.ReportAGVTaskResponseB<Z:github.com/devil/wmss/agv/internal/core/contracts/wms_grpcb\x06proto3"
+	"\x16ReportAGVTaskCompleted\x12\x19.wms.ReportAGVTaskRequest\x1a\x1a.wms.ReportAGVTaskResponse\x128\n" +
+	"\rRequestReplan\x12\x12.wms.ReplanRequest\x1a\x13.wms.ReplanResponseB<Z:github.com/devil/wmss/agv/internal/core/contracts/wms_grpcb\x06proto3"
 
 var (
 	file_wms_proto_rawDescOnce sync.Once
@@ -161,19 +467,31 @@ func file_wms_proto_rawDescGZIP() []byte {
 	return file_wms_proto_rawDescData
 }
 
-var file_wms_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_wms_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_wms_proto_goTypes = []any{
 	(*ReportAGVTaskRequest)(nil),  // 0: wms.ReportAGVTaskRequest
 	(*ReportAGVTaskResponse)(nil), // 1: wms.ReportAGVTaskResponse
+	(*Coordinate)(nil),            // 2: wms.Coordinate
+	(*Milestone)(nil),             // 3: wms.Milestone
+	(*ReplanRequest)(nil),         // 4: wms.ReplanRequest
+	(*Waypoint)(nil),              // 5: wms.Waypoint
+	(*ReplanResponse)(nil),        // 6: wms.ReplanResponse
 }
 var file_wms_proto_depIdxs = []int32{
-	0, // 0: wms.WMSService.ReportAGVTaskCompleted:input_type -> wms.ReportAGVTaskRequest
-	1, // 1: wms.WMSService.ReportAGVTaskCompleted:output_type -> wms.ReportAGVTaskResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	2, // 0: wms.Milestone.position:type_name -> wms.Coordinate
+	2, // 1: wms.ReplanRequest.current_position:type_name -> wms.Coordinate
+	3, // 2: wms.ReplanRequest.milestones:type_name -> wms.Milestone
+	2, // 3: wms.Waypoint.position:type_name -> wms.Coordinate
+	5, // 4: wms.ReplanResponse.waypoints:type_name -> wms.Waypoint
+	0, // 5: wms.WMSService.ReportAGVTaskCompleted:input_type -> wms.ReportAGVTaskRequest
+	4, // 6: wms.WMSService.RequestReplan:input_type -> wms.ReplanRequest
+	1, // 7: wms.WMSService.ReportAGVTaskCompleted:output_type -> wms.ReportAGVTaskResponse
+	6, // 8: wms.WMSService.RequestReplan:output_type -> wms.ReplanResponse
+	7, // [7:9] is the sub-list for method output_type
+	5, // [5:7] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_wms_proto_init() }
@@ -187,7 +505,7 @@ func file_wms_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_wms_proto_rawDesc), len(file_wms_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -50,13 +50,14 @@ type Manager struct {
 }
 
 type AGVState struct {
-	ID     string
-	X, Y   int
-	Status string // "IDLE", "MOVING", "PICKING", "DROPPING"
+	ID           string
+	X, Y         int
+	NextX, NextY int    // Vị trí chuẩn bị bước vào
+	Status       string // "IDLE", "MOVING", "PICKING", "DROPPING"
 }
 
 // Số lần tối đa chờ trước khi phát cảnh báo deadlock
-const maxCollisionRetries = 15
+const maxCollisionRetries = 4
 
 func NewManager() *Manager {
 	broker := os.Getenv("KAFKA_BROKER")
@@ -78,8 +79,7 @@ func NewManager() *Manager {
 	}
 }
 
-// isPositionOccupied kiểm tra xem có AGV nào khác đang đứng tại vị trí (targetX, targetY) không.
-// Đây là lớp bảo vệ runtime, hoạt động độc lập với Reservation Table ở MES.
+// isPositionOccupied kiểm tra xem có AGV nào khác đang đứng hoặc CHUẨN BỊ bước vào vị trí (targetX, targetY) không.
 func (m *Manager) isPositionOccupied(targetX, targetY int, excludeAGV string) bool {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -87,19 +87,43 @@ func (m *Manager) isPositionOccupied(targetX, targetY int, excludeAGV string) bo
 		if id == excludeAGV {
 			continue
 		}
-		if state.X == targetX && state.Y == targetY && state.Status != "IDLE" {
-			return true
+		if state.Status != "IDLE" {
+			if (state.X == targetX && state.Y == targetY) || (state.NextX == targetX && state.NextY == targetY) {
+				return true
+			}
 		}
 	}
 	return false
 }
 
+// tryClaimPosition kiểm tra và giữ chỗ (NextX, NextY) một cách atom.
+func (m *Manager) tryClaimPosition(agvID string, targetX, targetY int) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for id, state := range m.agvs {
+		if id == agvID {
+			continue
+		}
+		if state.Status != "IDLE" {
+			if (state.X == targetX && state.Y == targetY) || (state.NextX == targetX && state.NextY == targetY) {
+				return false
+			}
+		}
+	}
+	
+	if state, ok := m.agvs[agvID]; ok {
+		state.NextX = targetX
+		state.NextY = targetY
+	}
+	return true
+}
+
 // waitForClearance chờ cho đến khi ô tiếp theo trống hoặc hết retry.
-// Trả về true nếu ô đã trống, false nếu hết retry (nghi ngờ deadlock).
+// Trả về true nếu ô đã trống và ĐÃ GIỮ CHỖ, false nếu hết retry (nghi ngờ deadlock).
 func (m *Manager) waitForClearance(agvID string, targetX, targetY int) bool {
 	for retry := 0; retry < maxCollisionRetries; retry++ {
-		if !m.isPositionOccupied(targetX, targetY, agvID) {
-			return true // Ô đã trống, tiếp tục di chuyển
+		if m.tryClaimPosition(agvID, targetX, targetY) {
+			return true // Ô đã trống và đã được lock
 		}
 		log.Printf("[AGV %s] ⏳ WAITING — Ô (%d,%d) đang bị AGV khác chiếm. Chờ... (lần %d/%d)",
 			agvID, targetX, targetY, retry+1, maxCollisionRetries)
@@ -113,19 +137,74 @@ func (m *Manager) waitForClearance(agvID string, targetX, targetY int) bool {
 // RunAGV chạy lộ trình của 1 AGV trong goroutine riêng
 func (m *Manager) RunAGV(plan ExecutionPlan) {
 	m.mu.Lock()
-	m.agvs[plan.AgvID] = &AGVState{ID: plan.AgvID, Status: "MOVING"}
+	if _, exists := m.agvs[plan.AgvID]; !exists {
+		m.agvs[plan.AgvID] = &AGVState{ID: plan.AgvID, Status: "MOVING", NextX: -1, NextY: -1}
+	} else {
+		m.agvs[plan.AgvID].Status = "MOVING"
+		m.agvs[plan.AgvID].NextX = -1
+		m.agvs[plan.AgvID].NextY = -1
+	}
 	m.mu.Unlock()
 
 	log.Printf("[AGV %s] ===== BAT DAU THUC THI LENH =====", plan.AgvID)
 	log.Printf("[AGV %s] Tong so buoc: %d", plan.AgvID, len(plan.Waypoints))
 
-	for i, wp := range plan.Waypoints {
+	for i := 0; i < len(plan.Waypoints); i++ {
+		wp := plan.Waypoints[i]
+
 		// ═══ KIỂM TRA VA CHẠM TRƯỚC KHI DI CHUYỂN ═══
 		// Chỉ kiểm tra khi action là MOVE hoặc RETURN (các action di chuyển thuần túy)
 		if wp.Action == "MOVE" || wp.Action == "RETURN" {
 			if !m.waitForClearance(plan.AgvID, wp.Position.X, wp.Position.Y) {
-				// Nếu bị deadlock, vẫn cố gắng di chuyển (hy vọng MES đã tính toán đúng)
-				log.Printf("[AGV %s] Deadlock timeout, tiep tuc di chuyen...", plan.AgvID)
+				log.Printf("[AGV %s] Bị kẹt cứng! Gọi RequestReplan...", plan.AgvID)
+				
+				var milestones []*pbWms.Milestone
+				hasReturn := false
+				var lastReturn *pbWms.Milestone
+
+				for j := i; j < len(plan.Waypoints); j++ {
+					a := plan.Waypoints[j].Action
+					if a == "PICK_UP" || a == "DROP_OFF" {
+						milestones = append(milestones, &pbWms.Milestone{
+							Position: &pbWms.Coordinate{
+								X: float32(plan.Waypoints[j].Position.X),
+								Y: float32(plan.Waypoints[j].Position.Y),
+							},
+							Action: a,
+						})
+					} else if a == "RETURN" {
+						hasReturn = true
+						lastReturn = &pbWms.Milestone{
+							Position: &pbWms.Coordinate{
+								X: float32(plan.Waypoints[j].Position.X),
+								Y: float32(plan.Waypoints[j].Position.Y),
+							},
+							Action: "RETURN",
+						}
+					}
+				}
+
+				if hasReturn && lastReturn != nil {
+					milestones = append(milestones, lastReturn)
+				}
+
+				m.mu.Lock()
+				curX, curY := m.agvs[plan.AgvID].X, m.agvs[plan.AgvID].Y
+				m.mu.Unlock()
+
+				newPlan, err := m.requestReplan(plan, curX, curY, milestones)
+				if err != nil || len(newPlan) == 0 {
+					log.Printf("[AGV %s] Lỗi Replan: %v. Đứng chờ...", plan.AgvID, err)
+					time.Sleep(2 * time.Second)
+					i-- // Lùi i để thử lại bước hiện tại
+					continue
+				} else {
+					log.Printf("[AGV %s] Replan thành công, nhận %d waypoints mới", plan.AgvID, len(newPlan))
+					// Thay thế waypoints từ i trở đi bằng newPlan
+					plan.Waypoints = append(plan.Waypoints[:i], newPlan...)
+					i-- // Lùi i để vòng lặp kế tiếp xử lý waypoint mới (đang ở vị trí i)
+					continue
+				}
 			}
 		}
 
@@ -135,6 +214,8 @@ func (m *Manager) RunAGV(plan ExecutionPlan) {
 		state := m.agvs[plan.AgvID]
 		state.X = wp.Position.X
 		state.Y = wp.Position.Y
+		state.NextX = -1
+		state.NextY = -1
 		state.Status = wp.Action
 		m.mu.Unlock()
 
@@ -218,4 +299,50 @@ func (m *Manager) reportCompletionToWMS(grpcURL, agvID, orderID string) {
 	}
 
 	fmt.Printf("[AGV %s] Da bao cao hoan thanh cho WMS qua gRPC thanh cong.\n", agvID)
+}
+
+func (m *Manager) requestReplan(plan ExecutionPlan, curX, curY int, milestones []*pbWms.Milestone) ([]Waypoint, error) {
+	if plan.WmsGrpcURL == "" {
+		return nil, fmt.Errorf("khong co WmsGrpcURL")
+	}
+
+	conn, err := grpc.NewClient(plan.WmsGrpcURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	client := pbWms.NewWMSServiceClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	req := &pbWms.ReplanRequest{
+		AgvId:       plan.AgvID,
+		WarehouseId: plan.WarehouseID,
+		CurrentPosition: &pbWms.Coordinate{
+			X: float32(curX),
+			Y: float32(curY),
+		},
+		Milestones: milestones,
+	}
+
+	resp, err := client.RequestReplan(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	if !resp.Success {
+		return nil, fmt.Errorf("wms tu choi replan: %s", resp.Message)
+	}
+
+	var newWaypoints []Waypoint
+	for _, wp := range resp.Waypoints {
+		newWaypoints = append(newWaypoints, Waypoint{
+			Position: Point{
+				X: int(wp.Position.X),
+				Y: int(wp.Position.Y),
+			},
+			Action: wp.Action,
+		})
+	}
+	return newWaypoints, nil
 }

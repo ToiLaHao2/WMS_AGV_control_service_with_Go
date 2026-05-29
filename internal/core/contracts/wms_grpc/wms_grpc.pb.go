@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	WMSService_ReportAGVTaskCompleted_FullMethodName = "/wms.WMSService/ReportAGVTaskCompleted"
+	WMSService_RequestReplan_FullMethodName          = "/wms.WMSService/RequestReplan"
 )
 
 // WMSServiceClient is the client API for WMSService service.
@@ -27,6 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type WMSServiceClient interface {
 	ReportAGVTaskCompleted(ctx context.Context, in *ReportAGVTaskRequest, opts ...grpc.CallOption) (*ReportAGVTaskResponse, error)
+	RequestReplan(ctx context.Context, in *ReplanRequest, opts ...grpc.CallOption) (*ReplanResponse, error)
 }
 
 type wMSServiceClient struct {
@@ -47,11 +49,22 @@ func (c *wMSServiceClient) ReportAGVTaskCompleted(ctx context.Context, in *Repor
 	return out, nil
 }
 
+func (c *wMSServiceClient) RequestReplan(ctx context.Context, in *ReplanRequest, opts ...grpc.CallOption) (*ReplanResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReplanResponse)
+	err := c.cc.Invoke(ctx, WMSService_RequestReplan_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WMSServiceServer is the server API for WMSService service.
 // All implementations must embed UnimplementedWMSServiceServer
 // for forward compatibility.
 type WMSServiceServer interface {
 	ReportAGVTaskCompleted(context.Context, *ReportAGVTaskRequest) (*ReportAGVTaskResponse, error)
+	RequestReplan(context.Context, *ReplanRequest) (*ReplanResponse, error)
 	mustEmbedUnimplementedWMSServiceServer()
 }
 
@@ -64,6 +77,9 @@ type UnimplementedWMSServiceServer struct{}
 
 func (UnimplementedWMSServiceServer) ReportAGVTaskCompleted(context.Context, *ReportAGVTaskRequest) (*ReportAGVTaskResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ReportAGVTaskCompleted not implemented")
+}
+func (UnimplementedWMSServiceServer) RequestReplan(context.Context, *ReplanRequest) (*ReplanResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RequestReplan not implemented")
 }
 func (UnimplementedWMSServiceServer) mustEmbedUnimplementedWMSServiceServer() {}
 func (UnimplementedWMSServiceServer) testEmbeddedByValue()                    {}
@@ -104,6 +120,24 @@ func _WMSService_ReportAGVTaskCompleted_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WMSService_RequestReplan_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReplanRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WMSServiceServer).RequestReplan(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WMSService_RequestReplan_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WMSServiceServer).RequestReplan(ctx, req.(*ReplanRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // WMSService_ServiceDesc is the grpc.ServiceDesc for WMSService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -114,6 +148,10 @@ var WMSService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReportAGVTaskCompleted",
 			Handler:    _WMSService_ReportAGVTaskCompleted_Handler,
+		},
+		{
+			MethodName: "RequestReplan",
+			Handler:    _WMSService_RequestReplan_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
