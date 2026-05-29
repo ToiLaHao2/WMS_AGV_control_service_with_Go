@@ -40,6 +40,7 @@ func (s *AGVServer) ExecutePlan(ctx context.Context, req *pb.ExecutePlanRequest)
 		AgvID:          req.AgvId,
 		InboundOrderID: req.InboundOrderId,
 		WmsGrpcURL:     req.WmsGrpcUrl,
+		WarehouseID:    req.WarehouseId,
 		Waypoints:      waypoints,
 	}
 

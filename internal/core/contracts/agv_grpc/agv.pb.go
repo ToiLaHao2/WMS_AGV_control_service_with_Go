@@ -131,6 +131,7 @@ type ExecutePlanRequest struct {
 	InboundOrderId string                 `protobuf:"bytes,2,opt,name=inbound_order_id,json=inboundOrderId,proto3" json:"inbound_order_id,omitempty"`
 	WmsGrpcUrl     string                 `protobuf:"bytes,3,opt,name=wms_grpc_url,json=wmsGrpcUrl,proto3" json:"wms_grpc_url,omitempty"`
 	Waypoints      []*Waypoint            `protobuf:"bytes,4,rep,name=waypoints,proto3" json:"waypoints,omitempty"`
+	WarehouseId    string                 `protobuf:"bytes,5,opt,name=warehouse_id,json=warehouseId,proto3" json:"warehouse_id,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -191,6 +192,13 @@ func (x *ExecutePlanRequest) GetWaypoints() []*Waypoint {
 		return x.Waypoints
 	}
 	return nil
+}
+
+func (x *ExecutePlanRequest) GetWarehouseId() string {
+	if x != nil {
+		return x.WarehouseId
+	}
+	return ""
 }
 
 type ExecutePlanResponse struct {
@@ -264,13 +272,14 @@ const file_agv_proto_rawDesc = "" +
 	"\x01y\x18\x02 \x01(\x02R\x01y\"O\n" +
 	"\bWaypoint\x12+\n" +
 	"\bposition\x18\x01 \x01(\v2\x0f.agv.CoordinateR\bposition\x12\x16\n" +
-	"\x06action\x18\x02 \x01(\tR\x06action\"\xa4\x01\n" +
+	"\x06action\x18\x02 \x01(\tR\x06action\"\xc7\x01\n" +
 	"\x12ExecutePlanRequest\x12\x15\n" +
 	"\x06agv_id\x18\x01 \x01(\tR\x05agvId\x12(\n" +
 	"\x10inbound_order_id\x18\x02 \x01(\tR\x0einboundOrderId\x12 \n" +
 	"\fwms_grpc_url\x18\x03 \x01(\tR\n" +
 	"wmsGrpcUrl\x12+\n" +
-	"\twaypoints\x18\x04 \x03(\v2\r.agv.WaypointR\twaypoints\"Z\n" +
+	"\twaypoints\x18\x04 \x03(\v2\r.agv.WaypointR\twaypoints\x12!\n" +
+	"\fwarehouse_id\x18\x05 \x01(\tR\vwarehouseId\"Z\n" +
 	"\x13ExecutePlanResponse\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\x12\x15\n" +
 	"\x06agv_id\x18\x02 \x01(\tR\x05agvId\x12\x14\n" +

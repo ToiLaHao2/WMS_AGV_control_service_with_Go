@@ -33,6 +33,7 @@ type ExecutionPlan struct {
 	AgvID          string     `json:"agv_id"`
 	InboundOrderID string     `json:"inbound_order_id"`
 	WmsGrpcURL     string     `json:"wms_grpc_url"`
+	WarehouseID    string     `json:"warehouse_id"`
 	Waypoints      []Waypoint `json:"waypoints"`
 }
 
@@ -151,7 +152,7 @@ func (m *Manager) RunAGV(plan ExecutionPlan) {
 		}
 
 		// Bắn tọa độ lên Kafka
-		go m.publishTelemetry(plan.AgvID, wp, plan.InboundOrderID)
+		go m.publishTelemetry(plan.AgvID, wp, plan.InboundOrderID, plan)
 	}
 
 	m.mu.Lock()
@@ -165,10 +166,11 @@ func (m *Manager) RunAGV(plan ExecutionPlan) {
 	}
 }
 
-func (m *Manager) publishTelemetry(agvID string, wp Waypoint, orderID string) {
+func (m *Manager) publishTelemetry(agvID string, wp Waypoint, orderID string, plan ExecutionPlan) {
 	payload := map[string]interface{}{
 		"agv_id":           agvID,
 		"inbound_order_id": orderID,
+		"warehouse_id":     plan.WarehouseID,
 		"x":                wp.Position.X,
 		"y":                wp.Position.Y,
 		"action":           wp.Action,
